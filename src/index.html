@@ -1,0 +1,108 @@
+<!DOCTYPE html><html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>GatitoTuber</title>
+<style>
+:root{--pb:#1b1b22f2;--pf:#eee;--ac:#8b7bff;--sq:.025;--fl:2.5%;--esc:85vh}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--pb:#fffffff2;--pf:#1c1c22}}
+:root[data-theme="dark"]{--pb:#1b1b22f2;--pf:#eee}
+html,body{height:100%;margin:0;overflow:hidden;background:transparent;font:13px system-ui,sans-serif;box-sizing:border-box}
+body{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+#stage{position:fixed;inset:0;display:flex;align-items:flex-end;justify-content:center}
+#rig{height:var(--esc);aspect-ratio:1214/1296;position:relative;pointer-events:none}
+#rig img,.p,#bn,#sh,#all{position:absolute;inset:0;width:100%;height:100%}
+#all{transform-origin:50% 99%;animation:sq 2.6s ease-in-out infinite alternate}
+#all.talk{animation:fl .9s ease-in-out infinite alternate}
+#all.sleep{animation-duration:5.5s}
+@keyframes sq{from{transform:scale(calc(1 + var(--sq)),calc(1 - var(--sq)))}to{transform:scale(calc(1 - var(--sq)),calc(1 + var(--sq)))}}
+@keyframes fl{from{transform:translateY(0)}to{transform:translateY(calc(var(--fl) * -1))}}
+#sh.on{animation:tm .07s linear infinite alternate}
+@keyframes tm{from{transform:translate(-.8%,0) rotate(-.8deg)}to{transform:translate(.8%,.3%) rotate(.8deg)}}
+#bn.on{animation:rb .38s ease-out}
+@keyframes rb{0%{transform:none}35%{transform:translateY(-6%) scale(.96,1.05)}70%{transform:scale(1.05,.95)}100%{transform:none}}
+.ec,.mo{opacity:0}
+.bl .eo,.sleep .eo,.talk .mc{opacity:0}
+.bl .ec,.sleep .ec,.talk .mo{opacity:1}
+#pn{position:fixed;left:0;right:0;bottom:0;max-height:58vh;overflow:auto;background:var(--pb);color:var(--pf);padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));display:grid;gap:7px;border-radius:12px 12px 0 0}
+#pn.h{display:none}
+#pn label{display:grid;grid-template-columns:1fr auto;gap:2px 8px}#pn label input{grid-column:1/3;accent-color:var(--ac)}
+#pn button,#pn select{font:inherit;color:inherit;background:transparent;border:1px solid #8886;border-radius:8px;padding:6px 8px}
+#mic{background:var(--ac)!important;color:#fff!important;border:0!important}
+.r{display:flex;gap:6px;flex-wrap:wrap}
+#mt{height:6px;border-radius:3px;background:#8884;overflow:hidden}#mb{height:100%;width:0;background:var(--ac)}
+#gear{position:fixed;top:6px;right:6px;opacity:0;border:0;background:#0006;color:#fff;border-radius:6px}#gear:hover{opacity:.8}
+small{opacity:.65}
+</style></head><body>
+<div id="stage" data-tauri-drag-region><div id="rig"></div></div>
+<button id="gear">⚙</button>
+<div id="pn">
+ <div class="r"><button id="mic">🎤 Activar micrófono</button><button id="hide">Ocultar panel</button>
+ <select id="bgs"><option value="transparent">Fondo transparente</option><option value="#00b140">Fondo verde</option><option value="#000">Fondo negro</option></select>
+ <button id="rst">Restablecer</button></div>
+ <div id="mt"><div id="mb"></div></div>
+ <div id="sl" style="display:grid;gap:7px"></div>
+ <small>Clic derecho sobre el gatito: mostrar u ocultar este panel. Arrastra el gatito para mover la ventana. Teclas: W A S D mueven la cara y los brazos, espacio hace rebotar.</small>
+</div>
+<script>
+const $=i=>document.getElementById(i);
+const D=[['umbral','Sensibilidad al hablar',2,60,1,12],['fuerte','Volumen para orejas hacia atrás',20,95,1,45],['grito','Volumen para temblor',40,100,1,80],
+['squish','Squishy en reposo',0,8,.1,2.5],['flota','Flote al hablar',0,8,.1,2.5],['giro','Giro de la cabeza (WASD)',0,20,.5,7],['cara','Movimiento de la cara (WASD)',0,6,.1,2],
+['bf','Brazo que sale (A / D)',0,40,1,18],['bs','Brazo contrario',0,30,1,8],['orejas','Orejas hacia atrás',0,35,1,14],['elast','Elasticidad',0,100,1,50],
+['dormir','Dormir tras X minutos (0 = nunca)',0,15,1,3],['esc','Tamaño',30,100,1,85]];
+let S={fondo:'transparent'};D.forEach(d=>S[d[0]]=d[5]);
+try{Object.assign(S,JSON.parse(localStorage.gt||'{}'))}catch(e){}
+const L=(n,c='')=>`<img src="capas/${n}.png" class="${c}" draggable="false" alt="">`;
+$('rig').innerHTML=`<div id="bn"><div id="sh"><div id="all">
+<div id="al" class="p">${L('brazo_izq')}</div><div id="ar" class="p">${L('brazo_der')}</div>${L('cuerpo')}
+<div id="hd" class="p"><div id="el" class="p">${L('oreja_izq')}</div><div id="er" class="p">${L('oreja_der')}</div>${L('cabeza')}
+<div id="fc" class="p">${L('ojo_izq_abierto','eo')}${L('ojo_der_abierto','eo')}${L('ojo_izq_cerrado','ec')}${L('ojo_der_cerrado','ec')}${L('boca_cerrada','mc')}${L('boca_abierta','mo')}
+<div id="wl" class="p">${L('bigotes_izq')}</div><div id="wr" class="p">${L('bigotes_der')}</div></div></div></div></div></div>`;
+const O={al:'25 43',ar:'75 43',hd:'50 50',el:'35 18',er:'65 18',wl:'32 35',wr:'68 35'};
+for(const k in O)$(k).style.transformOrigin=O[k].split(' ').map(n=>n+'%').join(' ');
+$('sl').innerHTML=D.map(d=>`<label>${d[1]} <b id="v${d[0]}"></b><input type="range" id="r${d[0]}" min="${d[2]}" max="${d[3]}" step="${d[4]}"></label>`).join('');
+D.forEach(d=>{const r=$('r'+d[0]);r.value=S[d[0]];r.oninput=()=>{S[d[0]]=+r.value;ap();tg()}});
+$('bgs').value=S.fondo;$('bgs').onchange=e=>{S.fondo=e.target.value;ap()};
+function ap(){D.forEach(d=>$('v'+d[0]).textContent=S[d[0]]);const s=document.documentElement.style;
+ s.setProperty('--sq',S.squish/100);s.setProperty('--fl',S.flota+'%');s.setProperty('--esc',S.esc+'vh');
+ document.body.style.background=S.fondo;try{localStorage.gt=JSON.stringify(S)}catch(e){}}
+ap();
+// física: resortes (solo corren mientras algo se mueve)
+const P={},V={},T={};['hr','hx','hy','al','ar','el','er','wl','wr'].forEach(k=>P[k]=V[k]=T[k]=0);
+let run=0,keys=0,talk=false,loud=false,yell=false,sleep=0,last=Date.now(),hold=0,hl=0,hg=0,an,bf;
+function draw(){const t=(i,v)=>$(i).style.transform=v;
+ t('hd',`translate(${P.hx}%,${P.hy}%) rotate(${P.hr}deg)`);t('fc',`translate(${P.hx*.8}%,${P.hy*.8}%)`);
+ ['al','ar','el','er','wl','wr'].forEach(k=>t(k,`rotate(${P[k]}deg)`))}
+function loop(){const K=180,C=2*Math.sqrt(K)*(1-.7*S.elast/100),dt=.033,h0=P.hr;let e=0;
+ for(const k in P){V[k]+=(K*(T[k]-P[k])-C*V[k])*dt;P[k]+=V[k]*dt;e+=Math.abs(V[k])+Math.abs(T[k]-P[k])}
+ const dh=P.hr-h0;V.el-=dh*20;V.er-=dh*20;V.wl-=dh*30;V.wr-=dh*30;
+ draw();if(e>.05)setTimeout(loop,33);else run=0}
+function wake(){if(!run){run=1;setTimeout(loop,33)}}
+function tg(){const x=((keys>>3)&1)-((keys>>1)&1),y=((keys>>2)&1)-(keys&1),a=-x;
+ T.hr=x*S.giro+(sleep?5:0);T.hx=x*S.cara;T.hy=y*S.cara;
+ T.al=a>0?a*S.bf:a*S.bs;T.ar=a>0?a*S.bs:a*S.bf;
+ const b=loud?S.orejas:0;T.el=-b;T.er=b;wake()}
+function act(){last=Date.now();if(sleep){sleep=0;$('all').classList.remove('sleep');tg()}}
+function setKeys(m){if((m&16)&&!(keys&16)){const b=$('bn');b.classList.remove('on');void b.offsetWidth;b.classList.add('on')}keys=m;act();tg()}
+// teclas globales (Tauri) o del navegador (vista previa)
+if(window.__TAURI__)window.__TAURI__.event.listen('keys',e=>setKeys(e.payload));
+else{const M={w:1,a:2,s:4,d:8,' ':16};const f=(e,on)=>{const b=M[e.key.toLowerCase()];if(b)setKeys(on?keys|b:keys&~b)};
+ addEventListener('keydown',e=>f(e,1));addEventListener('keyup',e=>f(e,0))}
+// micrófono
+function tick(){an.getByteTimeDomainData(bf);let m=0;for(const v of bf){const d=Math.abs(v-128);if(d>m)m=d}
+ const p=Math.min(100,m*100/64);$('mb').style.width=p+'%';
+ hold=p>S.umbral?4:hold-1;hl=p>S.fuerte?5:hl-1;hg=p>S.grito?5:hg-1;
+ const t=hold>0,l=hl>0,g=hg>0;if(t)act();
+ if(t!==talk){talk=t;$('all').classList.toggle('talk',t);if(t){V.wl+=40;V.wr-=40;V.el+=25;V.er-=25;wake()}}
+ if(l!==loud){loud=l;tg()}
+ if(g!==yell){yell=g;$('sh').classList.toggle('on',g)}}
+$('mic').onclick=async()=>{try{const s=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:true}});
+ const c=new AudioContext({latencyHint:'playback'});an=c.createAnalyser();an.fftSize=256;bf=new Uint8Array(256);
+ c.createMediaStreamSource(s).connect(an);setInterval(tick,66);$('mic').textContent='🎤 Escuchando'}catch(e){$('mic').textContent='Sin acceso al micrófono'}};
+// parpadeo y sueño
+(function b(){const a=$('all');a.classList.add('bl');setTimeout(()=>{a.classList.remove('bl');setTimeout(b,2000+Math.random()*4000)},120)})();
+setInterval(()=>{if(S.dormir&&!sleep&&Date.now()-last>S.dormir*6e4){sleep=1;$('all').classList.add('sleep');tg()}},5000);
+// panel
+const tp=()=>$('pn').classList.toggle('h');
+$('stage').oncontextmenu=e=>{e.preventDefault();tp()};$('gear').onclick=tp;$('hide').onclick=tp;
+$('rst').onclick=()=>{try{localStorage.removeItem('gt')}catch(e){}location.reload()};
+tg();
+</script></body></html>
